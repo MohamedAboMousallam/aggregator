@@ -48,10 +48,20 @@ func main() {
 	r.Use(middleware.Logger)
 
 	v1Router := chi.NewRouter()
+
 	v1Router.Get("/ready", handlerReadiness)
 	v1Router.Get("/notready", handlerError)
+
 	v1Router.Post("/users", apiCfg.handlerUserCreate)
 	v1Router.Get("/users", apiCfg.middlewareAuth(apiCfg.handlergetUser))
+
+	v1Router.Post("/feeds", apiCfg.middlewareAuth(apiCfg.handlerCreateFeed))
+	v1Router.Get("/feeds", apiCfg.handlerGetFeeds)
+
+	v1Router.Post("/feeds_follows", apiCfg.middlewareAuth(apiCfg.handlerCreateFeedFollows))
+	v1Router.Get("/feeds_follows", apiCfg.middlewareAuth(apiCfg.handlerGetFeedFollows))
+	v1Router.Delete("/feeds_follows/{feedfollowsID}", apiCfg.middlewareAuth(apiCfg.handlerDeleteFeedFollows))
+
 	r.Mount("/v1", v1Router)
 
 	server := &http.Server{
