@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -19,6 +20,12 @@ type apiConfig struct {
 }
 
 func main() {
+
+	feed, errror := urlToFeed("https://blog.boot.dev/index.xml")
+	if errror != nil {
+		log.Fatal(errror)
+	}
+	fmt.Println(feed)
 
 	err := godotenv.Load()
 	if err != nil {
@@ -44,6 +51,11 @@ func main() {
 		db: queries,
 	}
 
+	const collectionConcurrency = 10
+	const collectionInterval = time.Minute
+
+	go startScraping(queries, collectionConcurrency, collectionInterval)
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
@@ -61,6 +73,8 @@ func main() {
 	v1Router.Post("/feeds_follows", apiCfg.middlewareAuth(apiCfg.handlerCreateFeedFollows))
 	v1Router.Get("/feeds_follows", apiCfg.middlewareAuth(apiCfg.handlerGetFeedFollows))
 	v1Router.Delete("/feeds_follows/{feedfollowsID}", apiCfg.middlewareAuth(apiCfg.handlerDeleteFeedFollows))
+
+	v1Router.Get("/posts", apiCfg.middlewareAuth(apiCfg.handlerPostsGet))
 
 	r.Mount("/v1", v1Router)
 
